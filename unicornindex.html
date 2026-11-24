@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aurelia &amp; The Carousel Unicorns｜星角旋轉木馬：發條獨角獸與夢境之詩</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=LXGW+WenKai+TC:wght@300;400;700&display=swap" rel="stylesheet" />
+  <style>
+    /* 華麗奇幻英字＋輕盈中字 */
+    .font-ornate-en {
+      font-family: 'Cinzel Decorative', Georgia, serif;
+    }
+    .font-airy-zh {
+      font-family: 'LXGW WenKai+TC', 'Noto Sans TC', sans-serif;
+    }
+
+    /* 柔和漂浮與進場動畫 */
+    @keyframes floatGentle {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-9px); }
+    }
+    @keyframes panelReveal {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 三隻獨角獸專屬粒子軌跡（炫光十字星＋微光小愛心） */
+    @keyframes spiralDrift {
+      0% { transform: translate(0, 0) rotate(0deg) scale(0.7); opacity: 0; }
+      25% { opacity: 1; }
+      75% { opacity: 0.95; }
+      100% { transform: translate(18px, -78px) rotate(220deg) scale(1.15); opacity: 0; }
+    }
+    @keyframes arcHop {
+      0% { transform: translate(0, 0) scale(0.75); opacity: 0; }
+      30% { opacity: 1; }
+      65% { transform: translate(24px, -46px) scale(1.1); opacity: 0.95; }
+      100% { transform: translate(42px, -22px) scale(0.6); opacity: 0; }
+    }
+    @keyframes waveBreeze {
+      0% { transform: translate(0, 0) scale(0.75); opacity: 0; }
+      33% { transform: translate(-16px, -26px) scale(1.05); opacity: 1; }
+      66% { transform: translate(16px, -52px) scale(1.12); opacity: 0.9; }
+      100% { transform: translate(-8px, -78px) scale(0.65); opacity: 0; }
+    }
+
+    .animate-float-gentle {
+      animation: floatGentle 4.8s ease-in-out infinite;
+    }
+    .animate-panel-reveal {
+      animation: panelReveal 0.42s ease-out forwards;
+    }
+    .unicorn-particle-spiral {
+      animation: spiralDrift 2.6s ease-out infinite;
+    }
+    .unicorn-particle-arc {
+      animation: arcHop 2.2s ease-out infinite;
+    }
+    .unicorn-particle-wave {
+      animation: waveBreeze 2.8s ease-in-out infinite;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-[#14182E] via-[#1E2242] to-[#15182E] text-[#F8FAFC] selection:bg-amber-300/30 selection:text-amber-100 overflow-x-hidden">
+
+  <!-- 任務線索提示框 -->
+  <div id="questToast" class="hidden fixed bottom-6 right-6 z-50 bg-[#1B203C]/95 text-amber-100 border-2 border-[#E6BE6A]/80 px-5 py-3 rounded-2xl shadow-2xl items-center gap-3 animate-panel-reveal font-airy-zh text-sm">
+    <span class="text-amber-300 text-lg">✦</span>
+    <span id="questToastText" class="font-bold tracking-wide"></span>
+  </div>
+
+  <!-- 頂部導覽列與捲動進度條 -->
+  <header class="fixed top-0 left-0 right-0 z-40 bg-[#14182E]/90 backdrop-blur-md border-b border-[#E6BE6A]/45 text-[#F8FAFC] shadow-lg">
+    <div class="h-1 w-full bg-[#0D1021]">
+      <div id="scrollProgressBar" class="h-full bg-gradient-to-r from-[#93C5FD] via-[#E6BE6A] to-[#F472B6] transition-all duration-150" style="width: 0%;"></div>
+    </div>
+
+    <div class="max-w-6xl mx-auto px-4 py-2.5 flex items-center justify-between gap-2">
+      <button onclick="scrollToSection('hero')" class="flex items-center gap-3 text-left group">
+        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-[#2B315C] to-[#1A1D38] border border-[#E6BE6A]/75 flex items-center justify-center text-amber-300 font-bold shadow-inner group-hover:border-amber-200 transition">
+          ✦
+        </div>
+        <div>
+          <span class="font-ornate-en font-bold text-sm sm:text-base tracking-wider text-amber-200 block leading-tight">
+            Carousel of Starlight
+          </span>
+          <span class="text-[11px] font-airy-zh tracking-wider text-slate-300 hidden sm:block">
+            星角旋轉木馬：獨角獸與夢境之詩
+          </span>
+        </div>
+      </button>
+
+      <nav class="hidden md:flex items-center gap-1 font-airy-zh">
+        <button onclick="scrollToSection('world')" class="px-3.5 py-1.5 rounded-full text-xs font-medium text-slate-200 hover:text-amber-200 hover:bg-white/10 transition">世界地圖</button>
+        <button onclick="scrollToSection('characters')" class="px-3.5 py-1.5 rounded-full text-xs font-medium text-slate-200 hover:text-amber-200 hover:bg-white/10 transition">獨角獸夥伴</button>
+        <button onclick="scrollToSection('story')" class="px-3.5 py-1.5 rounded-full text-xs font-medium text-slate-200 hover:text-amber-200 hover:bg-white/10 transition">六幕篇章</button>
+        <button onclick="scrollToSection('explore')" class="px-3.5 py-1.5 rounded-full text-xs font-medium text-slate-200 hover:text-amber-200 hover:bg-white/10 transition">3D 旋轉木馬</button>
+        <button onclick="scrollToSection('ending')" class="px-3.5 py-1.5 rounded-full text-xs font-medium text-slate-200 hover:text-amber-200 hover:bg-white/10 transition">修復紀錄</button>
+      </nav>
+
+      <div class="flex items-center gap-2.5 font-airy-zh">
+        <div class="bg-[#0F1326]/90 border border-[#E6BE6A]/50 px-3 py-1.5 rounded-full flex items-center gap-2 text-xs">
+          <span class="text-amber-300 font-bold">MELODY</span>
+          <span class="text-slate-300 hidden sm:inline">旋轉木馬共鳴</span>
+          <span id="headerMelodyPercent" class="font-bold text-amber-200">13%</span>
+        </div>
+
+        <button id="soundToggleBtn" onclick="toggleSound()" title="切換音樂盒音效" class="w-9 h-9 rounded-full border flex items-center justify-center text-sm transition bg-amber-400/20 border-amber-300/70 text-amber-200">
+          ♪
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 01. 首頁 Hero Section -->
+  <section id="hero" class="relative pt-28 pb-20 sm:pt-36 sm:pb-28 px-4 bg-gradient-to-b from-[#14182E] via-[#262349] to-[#1A1E3B] text-white overflow-hidden">
+    <div class="absolute -top-24 -left-24 w-80 h-80 rounded-full bg-[#93C5FD]/15 blur-3xl pointer-events-none"></div>
+    <div class="absolute top-1/3 right-0 w-96 h-96 rounded-full bg-[#F472B6]/15 blur-3xl pointer-events-none"></div>
+
+    <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 items-center relative z-10">
+      <div class="lg:col-span-7 text-center lg:text-left space-y-6">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#E6BE6A]/55 bg-[#23274A]/80 text-amber-200 font-airy-zh text-xs tracking-widest">
+          <span>✦ METALLIC FANTASY RPG · 旋轉木馬夢境世界觀</span>
+        </div>
+
+        <h1 class="space-y-2">
+          <span class="font-ornate-en font-black text-3xl sm:text-5xl lg:text-6xl tracking-wide bg-gradient-to-r from-[#FDE68A] via-[#F9A8D4] to-[#93C5FD] bg-clip-text text-transparent block leading-tight drop-shadow">
+            Aurelia &amp; The Carousel Unicorns
+          </span>
+          <span class="font-airy-zh font-light text-lg sm:text-2xl lg:text-3xl tracking-widest text-amber-100/95 block mt-2">
+            星角旋轉木馬：發條獨角獸與夢境之詩
+          </span>
+        </h1>
+
+        <p class="text-sm sm:text-base text-slate-200/90 leading-relaxed max-w-xl mx-auto lg:mx-0 font-airy-zh font-light">
+          在星屑群島的雲端聖殿中，守護夢境旋律的旋轉木馬音樂盒突然停擺。
+          與月銀獨角獸露米娜、鎏金獨角獸奧蕾莉亞、玫瑰銅獨角獸瑟拉菲娜一同找回失落音符，讓旋轉木馬再度轉動。
+        </p>
+
+        <div class="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2 font-airy-zh">
+          <button onclick="startJourney()" class="px-8 py-3.5 rounded-full bg-gradient-to-r from-[#E6BE6A] via-[#F5C878] to-[#D48C9E] hover:brightness-105 text-[#14182E] font-bold tracking-wider shadow-lg border border-amber-200 transition transform hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2.5">
+            <span>✦ 踏入夢境世界 · 開始探索</span>
+          </button>
+
+          <button onclick="scrollToSection('explore')" class="px-6 py-3.5 rounded-full bg-[#23274A]/85 hover:bg-[#2F3561] text-amber-100 font-medium border border-[#E6BE6A]/50 transition">
+            探索 3D 旋轉木馬
+          </button>
+        </div>
+      </div>
+
+      <div class="lg:col-span-5 flex justify-center">
+        <div class="relative w-72 h-72 sm:w-80 sm:h-80 rounded-3xl bg-gradient-to-b from-[#252A4E]/90 to-[#181B36]/95 border-2 border-[#E6BE6A]/65 shadow-2xl p-6 flex flex-col items-center justify-center animate-float-gentle">
+          <div class="absolute inset-2.5 rounded-2xl border border-[#F472B6]/30 pointer-events-none"></div>
+          <svg viewBox="0 0 220 220" class="w-full h-full">
+            <circle cx="110" cy="110" r="92" fill="none" stroke="#E6BE6A" stroke-width="1.2" stroke-dasharray="4 4" opacity="0.7"></circle>
+            <circle cx="110" cy="110" r="80" fill="none" stroke="#F472B6" stroke-width="0.9" opacity="0.45"></circle>
+            <polygon points="110,42 54,94 166,94" fill="#D48C9E" fill-opacity="0.45" stroke="#E6BE6A" stroke-width="2.2"></polygon>
+            <line x1="78" y1="94" x2="78" y2="152" stroke="#E6BE6A" stroke-width="2"></line>
+            <line x1="110" y1="94" x2="110" y2="152" stroke="#FDE68A" stroke-width="2.5"></line>
+            <line x1="142" y1="94" x2="142" y2="152" stroke="#E6BE6A" stroke-width="2"></line>
+            <ellipse cx="78" cy="122" rx="12" ry="7" fill="#FFFBEB"></ellipse>
+            <ellipse cx="142" cy="118" rx="12" ry="7" fill="#FDF2F8"></ellipse>
+            <ellipse cx="110" cy="156" rx="66" ry="16" fill="#2A2F57" stroke="#E6BE6A" stroke-width="2.5"></ellipse>
+            <path d="M110 26 L114 36 L124 38 L116 44 L118 54 L110 49 L102 54 L104 44 L96 38 L106 36 Z" fill="#FDE047"></path>
+          </svg>
+          <span class="text-xs font-airy-zh tracking-wider text-amber-200/90 mt-1">
+            ▼ 向下捲動推進六幕夢境故事
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02. 世界觀地圖 World Map -->
+  <section id="world" class="py-20 px-4">
+    <div class="max-w-6xl mx-auto space-y-10">
+      <div class="text-center max-w-2xl mx-auto space-y-2.5">
+        <span class="font-airy-zh text-xs font-bold tracking-widest uppercase text-amber-200 bg-[#252A4E] px-4 py-1.5 rounded-full border border-[#E6BE6A]/50">
+          WORLD MAP · 星屑群島空域圖
+        </span>
+        <h2 class="text-2xl sm:text-4xl font-airy-zh font-bold text-[#FFFBEB]">
+          浮空群島與旋轉木馬聖殿
+        </h2>
+        <p class="text-slate-300 text-sm sm:text-base font-airy-zh font-light">
+          點擊地圖上的星光據點，查看各浮空區域的旋律狀態、世界規則與記憶齒輪線索。
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+        <div id="worldMapCanvas" class="lg:col-span-7 relative min-h-[360px] sm:min-h-[410px] rounded-3xl bg-gradient-to-br from-[#202546] to-[#171B35] p-6 shadow-xl border-2 border-[#E6BE6A]/50 overflow-hidden">
+          <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <line x1="0" y1="50" x2="100" y2="50" stroke="#E6BE6A" stroke-opacity="0.22" stroke-width="0.35" stroke-dasharray="1.5 1.5"></line>
+            <line x1="50" y1="0" x2="50" y2="100" stroke="#E6BE6A" stroke-opacity="0.22" stroke-width="0.35" stroke-dasharray="1.5 1.5"></line>
+            <circle cx="50" cy="50" r="35" fill="none" stroke="#E6BE6A" stroke-opacity="0.3" stroke-width="0.4"></circle>
+            <circle cx="50" cy="50" r="22" fill="none" stroke="#F472B6" stroke-opacity="0.3" stroke-width="0.35" stroke-dasharray="1 1"></circle>
+            <path d="M 50 24 L 23 54 L 52 77 L 78 48 Z" fill="rgba(230, 190, 106, 0.06)" stroke="#E6BE6A" stroke-opacity="0.6" stroke-width="0.5" stroke-dasharray="1.8 1.5"></path>
+          </svg>
+
+          <div class="absolute top-4 left-5 font-airy-zh text-xs font-bold text-amber-200 bg-[#14182E]/90 px-3.5 py-1 rounded-full border border-[#E6BE6A]/45">
+            ✦ STARLIGHT CHART · 點擊島嶼切換情報
+          </div>
+          <div id="regionPinsContainer"></div>
+        </div>
+
+        <div id="regionDetailPanel" class="lg:col-span-5 bg-[#23284A]/90 rounded-3xl p-6 sm:p-8 border-2 border-[#E6BE6A]/55 shadow-xl flex flex-col justify-between space-y-5 animate-panel-reveal font-airy-zh">
+          <!-- 由 JS 動態渲染 -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03. 獨角獸角色互動 Characters -->
+  <section id="characters" class="py-20 px-4 bg-[#191E3B]/90 border-y border-[#E6BE6A]/40">
+    <div class="max-w-6xl mx-auto space-y-10">
+      <div class="text-center max-w-2xl mx-auto space-y-2.5">
+        <span class="font-airy-zh text-xs font-bold tracking-widest uppercase text-amber-200 bg-[#252A4E] px-4 py-1.5 rounded-full border border-[#E6BE6A]/50">
+          UNICORN COMPANIONS · 三隻獨角獸夥伴
+        </span>
+        <h2 class="text-2xl sm:text-4xl font-airy-zh font-bold text-[#FFFBEB]">
+          選擇獨角獸檢視能力與互動對話
+        </h2>
+        <p class="text-slate-300 text-sm sm:text-base font-airy-zh font-light">
+          切換三位獨角獸查看專屬星軌與屬性，滑鼠移入或點擊互動時，身邊會飄起各自顏色的炫光十字星與小愛心。
+        </p>
+      </div>
+
+      <div id="characterTabsContainer" class="flex flex-wrap justify-center gap-3 font-airy-zh">
+        <!-- 由 JS 動態渲染 -->
+      </div>
+
+      <div id="characterShowcaseCard" class="rounded-3xl bg-[#1A2438]/90 p-6 sm:p-10 border-2 border-[#93C5FD]/60 shadow-2xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center animate-panel-reveal">
+        <!-- 由 JS 動態渲染 -->
+      </div>
+    </div>
+  </section>
+
+  <!-- 04. 六幕故事探索 Story -->
+  <section id="story" class="py-20 px-4">
+    <div class="max-w-5xl mx-auto space-y-12">
+      <div class="text-center max-w-2xl mx-auto space-y-2.5">
+        <span class="font-airy-zh text-xs font-bold tracking-widest uppercase text-amber-200 bg-[#252A4E] px-4 py-1.5 rounded-full border border-[#E6BE6A]/50">
+          SIX-ACT CHRONICLE · 六幕捲動故事敘事
+        </span>
+        <h2 class="text-2xl sm:text-4xl font-airy-zh font-bold text-[#FFFBEB]">
+          旋轉木馬與星屑群島六幕劇
+        </h2>
+        <p class="text-slate-300 text-sm sm:text-base font-airy-zh font-light">
+          隨捲動逐步展開六幕故事，從進入聖殿、揭開背景、遇見獨角獸到重啟旋轉木馬。
+        </p>
+      </div>
+
+      <div id="storyActsContainer" class="relative space-y-8 before:content-[''] before:absolute before:left-5 sm:before:left-1/2 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#E6BE6A]/40">
+        <!-- 由 JS 動態渲染 -->
+      </div>
+    </div>
+  </section>
+
+  <!-- 05. 3D 旋轉木馬音樂盒互動觀測台 Explore -->
+  <section id="explore" class="py-20 px-4 bg-[#191E3B]/90 border-t border-[#E6BE6A]/40">
+    <div class="max-w-6xl mx-auto space-y-10">
+      <div class="text-center max-w-2xl mx-auto space-y-2.5">
+        <span class="font-airy-zh text-xs font-bold tracking-widest uppercase text-amber-200 bg-[#252A4E] px-4 py-1.5 rounded-full border border-[#E6BE6A]/50">
+          3D CAROUSEL VIEWER · 旋轉木馬音樂盒互動
+        </span>
+        <h2 class="text-2xl sm:text-4xl font-airy-zh font-bold text-[#FFFBEB]">
+          3D 旋轉木馬音樂盒觀測台
+        </h2>
+        <p class="text-slate-300 text-sm sm:text-base font-airy-zh font-light">
+          拖曳旋轉 360 度檢視旋轉木馬與座騎起伏，切換不同夢境裝置並點擊啟動共鳴。
+        </p>
+      </div>
+
+      <div id="modelSelectorTabs" class="flex flex-wrap justify-center gap-3 font-airy-zh">
+        <!-- 由 JS 動態渲染 -->
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <div class="lg:col-span-7">
+          <div class="relative w-full h-[380px] sm:h-[440px] rounded-3xl overflow-hidden bg-gradient-to-b from-[#171B33] via-[#242347] to-[#191B34] shadow-2xl border-2 border-[#E6BE6A]/65 select-none">
+            <div class="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-amber-300/80 pointer-events-none z-10"></div>
+            <div class="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-amber-300/80 pointer-events-none z-10"></div>
+            <div class="absolute bottom-3 left-3 w-4 h-4 border-b-2 border-l-2 border-amber-300/80 pointer-events-none z-10"></div>
+            <div class="absolute bottom-3 right-3 w-4 h-4 border-b-2 border-r-2 border-amber-300/80 pointer-events-none z-10"></div>
+
+            <div id="threeCanvasMount" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
+
+            <div class="absolute top-4 left-6 bg-[#13172C]/85 backdrop-blur-sm text-amber-100 text-xs px-3.5 py-1.5 rounded-full border border-amber-400/45 flex items-center gap-2 pointer-events-none z-10">
+              <span class="w-2 h-2 rounded-full bg-amber-300 animate-pulse"></span>
+              <span>3D 旋轉木馬觀測：拖曳旋轉 · 滾輪縮放 · 點擊啟動共鳴</span>
+            </div>
+
+            <div class="absolute bottom-4 right-5 flex gap-2 z-10">
+              <button onclick="adjustThreeZoom(-0.8)" aria-label="放大模型" class="w-9 h-9 rounded-full bg-[#24294A] hover:bg-[#323966] text-amber-200 font-bold text-lg flex items-center justify-center border border-amber-400/50 transition active:scale-95">+</button>
+              <button onclick="adjustThreeZoom(0.8)" aria-label="縮小模型" class="w-9 h-9 rounded-full bg-[#24294A] hover:bg-[#323966] text-amber-200 font-bold text-lg flex items-center justify-center border border-amber-400/50 transition active:scale-95">−</button>
+            </div>
+          </div>
+
+          <div id="resonanceBanner" class="hidden mt-3 px-4 py-2.5 rounded-2xl bg-[#242A4F] border border-[#E6BE6A] text-amber-200 font-airy-zh text-xs sm:text-sm font-semibold text-center animate-panel-reveal"></div>
+        </div>
+
+        <div id="modelDetailPanel" class="lg:col-span-5 bg-[#222748]/95 rounded-3xl p-6 sm:p-8 border-2 border-[#E6BE6A]/55 shadow-xl space-y-5 font-airy-zh">
+          <!-- 由 JS 動態渲染 -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06. 結尾區域 Ending -->
+  <footer id="ending" class="py-20 px-4 bg-[#121528] text-[#F8FAFC] border-t-2 border-[#E6BE6A]/55">
+    <div class="max-w-4xl mx-auto text-center space-y-6 bg-[#1E2342]/95 rounded-3xl p-8 sm:p-14 border-2 border-[#E6BE6A]/50 shadow-2xl font-airy-zh">
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#13172C] text-amber-200 text-xs font-bold border border-[#E6BE6A]/45">
+        <span id="endingProgressLabel">✦ 夢境修復進度：13%（已喚醒 1 / 8 項星塵線索）</span>
+      </div>
+
+      <h2 class="text-2xl sm:text-4xl font-bold text-[#FFFBEB]">
+        當旋轉木馬再度轉動，夢境便擁有永恆的光
+      </h2>
+
+      <p class="text-slate-200 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed font-light">
+        感謝你走進《星角旋轉木馬：發條獨角獸與夢境之詩》的世界。露米娜、奧蕾莉亞與瑟拉菲娜會一直守護著這座金屬與星光交織的童話，隨時歡迎你再次轉動發條展開探索。
+      </p>
+
+      <div class="flex flex-wrap justify-center gap-4 pt-2">
+        <button onclick="replayJourney()" class="px-8 py-3.5 rounded-full bg-gradient-to-r from-[#E6BE6A] via-[#F5C878] to-[#D48C9E] hover:brightness-105 text-[#14182E] font-bold tracking-wider shadow-lg transition active:scale-95">
+          ↑ 再次探索 · 回到星穹起點
+        </button>
+      </div>
+
+      <div class="pt-6 border-t border-white/15 text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <span>《星角旋轉木馬：發條獨角獸與夢境之詩》原創遊戲世界觀互動網站</span>
+        <span>Metallic Fantasy · Carousel &amp; Unicorns Showcase</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // ==========================================
+    // 1. 世界觀、獨角獸角色、六幕故事與 3D 裝置資料
+    // ==========================================
+    const WORLD_REGIONS = [
+      {
+        id: 'workshop',
+        chapter: 'STAGE 01',
+        name: '星穹旋轉木馬聖殿',
+        subtitle: 'Starlight Carousel Sanctuary',
+        coords: { x: 50, y: 24 },
+        pinColor: '#E6BE6A',
+        dangerLevel: '安全據點 · Lv.1',
+        desc: '座落在最高雲層上的玫瑰金與香檳金穹頂聖殿。巨大的旋轉木馬音樂盒曾在此日夜流轉，木馬隨旋律上下起伏，將夢境與星塵灑向整座群島。',
+        anomaly: '主發條停擺導致旋轉木馬失去律動，星冠光環黯淡，必須尋回三枚記憶齒輪才能重啟轉動。',
+        keyItem: '【核心座台】星穹旋轉木馬發條'
+      },
+      {
+        id: 'maze',
+        chapter: 'STAGE 02',
+        name: '糖霜迷宮花園',
+        subtitle: 'Frosting Hedge Labyrinth',
+        coords: { x: 23, y: 54 },
+        pinColor: '#D48C9E',
+        dangerLevel: '迷霧領域 · Lv.4',
+        desc: '由雲朵灌木與白瓷拱門構築的漂浮花園，每一道花牆都藏著童年時期最純真的笑聲與夢境音符。',
+        anomaly: '失去旋律滋養的花叢逐漸褪成灰白素描，迷宮路徑每當鐘聲敲響便會重新排列。',
+        keyItem: '【記憶齒輪 I】晨露之音'
+      },
+      {
+        id: 'clocktower',
+        chapter: 'STAGE 03',
+        name: '玫瑰銅發條鐘塔',
+        subtitle: 'Rose-Copper Clockwork Spire',
+        coords: { x: 78, y: 48 },
+        pinColor: '#93C5FD',
+        dangerLevel: '時空亂流 · Lv.7',
+        desc: '調節星屑群島時間流速的古老鐘樓，無數精密香檳金與玫瑰銅齒輪在雲霧中懸浮咬合，維繫著星夜與晨曦的交替。',
+        anomaly: '鐘面指針開始逆轉，過去與未來的幻影在階梯間同時重疊。',
+        keyItem: '【記憶齒輪 II】星軌之刻'
+      },
+      {
+        id: 'bay',
+        chapter: 'STAGE 04',
+        name: '流光星塵海灣',
+        subtitle: 'Luminous Stardust Bay',
+        coords: { x: 52, y: 77 },
+        pinColor: '#C084FC',
+        dangerLevel: '深層夢境 · Lv.10',
+        desc: '群島最底層的靜謐湖泊，所有墜落的夢境碎片最終都會隨雲雨匯聚於此，映照出溫柔的香檳金與暮光紫微光。',
+        anomaly: '湖面失去波紋，負責傳遞音符的星光水母全部陷入沉睡。',
+        keyItem: '【記憶齒輪 III】潮汐之歌'
+      }
+    ];
+
+    const CHARACTERS = [
+      {
+        id: 'lumina',
+        code: 'UNICORN-01',
+        name: '露米娜 Lumina',
+        title: '月銀星象獨角獸',
+        classType: '星軌感知 / 螺旋升光',
+        weapon: '雕花月光銀角',
+        accentColor: '#93C5FD',
+        starColor: '#E0F2FE',
+        heartColor: '#BAE6FD',
+        trajectoryType: 'spiral',
+        trajectoryLabel: '月銀螺旋上升（十字星＋冰藍小愛心）',
+        cardBg: 'bg-[#1A2438]/90',
+        borderAccent: 'border-[#93C5FD]/60',
+        tagStyle: 'bg-sky-950/80 text-sky-200 border-sky-400/50',
+        auraStart: '#93C5FD',
+        fur: '#E0F2FE',
+        furShadow: '#BAE6FD',
+        patch: '#F8FAFC',
+        horn: '#93C5FD',
+        wing: '#7DD3FC',
+        starMotif: '#60A5FA',
+        stats: [
+          { label: '星軌感知', val: 95, max: 100 },
+          { label: '夢境共鳴', val: 89, max: 100 },
+          { label: '銀角魔力', val: 84, max: 100 }
+        ],
+        skillName: '【專屬星軌】銀月螺旋星塵',
+        skillDesc: '喚醒螺旋上升的月銀十字星與冰藍小愛心，引導迷失的夢境旋律回到旋轉木馬穹頂。',
+        backstory: '露米娜誕生於星穹聖殿的銀月之夜，額上的月光銀角能折射出最純淨的星光。每當旋轉木馬的音符散落，她總會循著螺旋星軌率先察覺異變。',
+        dialogues: [
+          '「銀色的星塵正在螺旋上升……聽見了嗎？那是旋轉木馬穹頂傳來的微弱呼喚。」',
+          '「就算雲海起了濃霧，只要跟著月光的軌跡前進，每一段回憶都能被溫柔找回。」',
+          '「你剛剛觸碰到的光點好溫暖呢，連小愛心都跟著閃爍起來了。」'
+        ]
+      },
+      {
+        id: 'aurelia',
+        code: 'UNICORN-02',
+        name: '奧蕾莉亞 Aurelia',
+        title: '鎏金發條獨角獸',
+        classType: '發條修復 / 躍動共鳴',
+        weapon: '香檳金齒輪角',
+        accentColor: '#FBBF24',
+        starColor: '#FEF08A',
+        heartColor: '#FDBA74',
+        trajectoryType: 'arc',
+        trajectoryLabel: '香檳金跳躍弧線（十字星＋蜜桃小愛心）',
+        cardBg: 'bg-[#261F2D]/90',
+        borderAccent: 'border-[#FBBF24]/60',
+        tagStyle: 'bg-amber-950/80 text-amber-200 border-amber-400/50',
+        auraStart: '#FBBF24',
+        fur: '#FEF3C7',
+        furShadow: '#FDE68A',
+        patch: '#FFFBEB',
+        horn: '#F59E0B',
+        wing: '#FBBF24',
+        starMotif: '#D97706',
+        stats: [
+          { label: '發條律動', val: 96, max: 100 },
+          { label: '修復巧思', val: 90, max: 100 },
+          { label: '躍動活力', val: 93, max: 100 }
+        ],
+        skillName: '【專屬星軌】鎏金跳躍弧光',
+        skillDesc: '迸發輕快跳躍弧線的香檳金十字星與蜜桃小愛心，替停擺的旋轉木馬底座重新注入轉動能量。',
+        backstory: '奧蕾莉亞的獨角有著細緻的香檳金齒輪紋路，鬃毛閃耀著暖陽與蜜桃般的金屬光澤。她最喜歡在旋轉木馬座台間輕盈跳躍，為每一枚齒輪上緊發條。',
+        dialogues: [
+          '「叮噹！只要把發條重新上緊，旋轉木馬的座騎就會跟著音樂一起跳躍起來囉！」',
+          '「別怕齒輪卡住，看我的香檳金星光劃出漂亮的弧線，立刻幫它恢復活力！」',
+          '「一起讓整座夢境旋轉木馬重新轉動吧，這趟冒險才正要發光呢！」'
+        ]
+      },
+      {
+        id: 'seraphina',
+        code: 'UNICORN-03',
+        name: '瑟拉菲娜 Seraphina',
+        title: '玫瑰銅幻夢獨角獸',
+        classType: '夢境安撫 / 波浪共鳴',
+        weapon: '玫瑰銅星冠角',
+        accentColor: '#F472B6',
+        starColor: '#FCE7F3',
+        heartColor: '#E9D5FF',
+        trajectoryType: 'wave',
+        trajectoryLabel: '玫瑰銅微風波浪（十字星＋薰衣草小愛心）',
+        cardBg: 'bg-[#251C34]/90',
+        borderAccent: 'border-[#E879F9]/60',
+        tagStyle: 'bg-fuchsia-950/80 text-fuchsia-200 border-fuchsia-400/50',
+        auraStart: '#F472B6',
+        fur: '#FCE7F3',
+        furShadow: '#FBCFE8',
+        patch: '#FFF1F2',
+        horn: '#DB7093',
+        wing: '#E879F9',
+        starMotif: '#F472B6',
+        stats: [
+          { label: '幻夢安撫', val: 94, max: 100 },
+          { label: '旋律柔韌', val: 92, max: 100 },
+          { label: '星雲直覺', val: 88, max: 100 }
+        ],
+        skillName: '【專屬星軌】玫瑰銅微風波浪',
+        skillDesc: '釋放沿著 S 型波浪微風飄浮的玫瑰金十字星與薰衣草小愛心，安撫混亂的夢境碎片。',
+        backstory: '瑟拉菲娜擁有玫瑰銅光澤的獨角與薰衣草紫漸層鬃毛。當夢境碎片因停擺而產生混亂波紋時，她總能用輕柔如微風的共鳴讓一切歸於寧靜。',
+        dialogues: [
+          '「像微風吹過雲海般的波浪……深呼吸，混亂的夢境正在慢慢變得柔和。」',
+          '「玫瑰銅的微光與薰衣草色的小愛心，會把每一份溫柔的心意留在旋律裡。」',
+          '「當旋轉木馬再次唱起歌時，所有的等待都會變成最美的童話。」'
+        ]
+      }
+    ];
+
+    const STORY_ACTS = [
+      {
+        act: 'ACT I · 進入世界',
+        title: '第一幕：星穹旋轉木馬的邀約',
+        location: '星穹旋轉木馬聖殿',
+        text: '推開玫瑰金與暮光紫交織的聖殿大門，懸浮在星屑群島中央的「旋轉木馬音樂盒」靜靜佇立。華麗的星冠與發條底座在暮光中閃爍，等待旅人展開這場夢境修復之旅。',
+        questNote: '第一幕展開：踏入星穹聖殿，感知旋轉木馬的初始微光。',
+        badgeColor: 'bg-amber-500/20 text-amber-200 border border-amber-400/50'
+      },
+      {
+        act: 'ACT II · 世界背景',
+        title: '第二幕：浮空群島與旋律法則',
+        location: '星屑群島空域',
+        text: '星屑群島由無數浮空島嶼組成，而旋轉木馬音樂盒正是維繫島嶼光影與夢境節奏的核心。當旋律完整時，木馬穩健旋轉，群島洋溢著溫暖的童話色彩。',
+        questNote: '世界規則揭曉：旋律共鳴決定島嶼光影與木馬轉動律動。',
+        badgeColor: 'bg-sky-500/20 text-sky-200 border border-sky-400/50'
+      },
+      {
+        act: 'ACT III · 角色登場',
+        title: '第三幕：三隻獨角獸的星塵共鳴',
+        location: '夢境迴廊',
+        text: '月銀獨角獸露米娜、鎏金獨角獸奧蕾莉亞與玫瑰銅獨角獸瑟拉菲娜依序現身。每一次互動，身邊都會飄起各自顏色的炫光十字星與小愛心，沿著專屬軌跡閃耀。',
+        questNote: '夥伴集結：三位獨角獸各司其職，準備喚醒失落音符。',
+        badgeColor: 'bg-fuchsia-500/20 text-fuchsia-200 border border-fuchsia-400/50'
+      },
+      {
+        act: 'ACT IV · 重要事件',
+        title: '第四幕：發條停擺與夢境裂隙',
+        location: '糖霜迷宮與發條鐘塔',
+        text: '突如其來的寂靜讓旋轉木馬停止轉動，記憶齒輪與音符散落群島，部分島嶼失去色彩。若不在夢境碎片消散前找回旋律，美好的記憶將隨風淡去。',
+        questNote: '核心衝突爆發：必須在碎片消散前找回音符並重啟發條。',
+        badgeColor: 'bg-rose-500/20 text-rose-200 border border-rose-400/50'
+      },
+      {
+        act: 'ACT V · 探索場景',
+        title: '第五幕：3D 旋轉木馬與星域觀測',
+        location: '3D 夢境裝置觀測台',
+        text: '走進 3D 互動觀測台，自由拖曳旋轉、縮放並點擊旋轉木馬音樂盒與夢境裝置，觀察金屬刻紋、座騎起伏與星光共鳴被重新喚醒的瞬間。',
+        questNote: '場景探索：操作 3D 旋轉木馬模型並觸發旋律調音。',
+        badgeColor: 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/50'
+      },
+      {
+        act: 'ACT VI · 故事結尾',
+        title: '第六幕：重啟旋轉的夢境之詩',
+        location: '星穹聖殿終章',
+        text: '當星光、發條與幻夢旋律再次交織，旋轉木馬重新緩緩轉動，炫光十字星與小愛心在夜空綻放。這段關於守護與想像的童話，將在每一次轉動中延續。',
+        questNote: '終章共鳴：完成夢境巡禮，隨時可再次轉動發條重啟探索。',
+        badgeColor: 'bg-emerald-500/20 text-emerald-200 border border-emerald-400/50'
+      }
+    ];
+
+    const SCENE_MODELS = [
+      {
+        id: 'carousel',
+        code: 'RELIC-01',
+        name: '星穹旋轉木馬音樂盒',
+        tag: '主軸夢境裝置',
+        desc: '以玫瑰金與香檳金打造的夢境旋轉木馬音樂盒，底座刻有星軌紋路，圓盤上環繞著獨角獸與木馬座騎，頂端懸浮著璀璨星冠。',
+        hint: '拖曳可 360° 旋轉檢視旋轉木馬，點擊模型或按下調音按鈕可加速轉動與起伏！',
+        lore: '當旋律被喚醒時，旋轉木馬圓盤會流暢轉動、座騎上下起伏，星冠也會亮起柔和的金屬星光。'
+      },
+      {
+        id: 'windup-base',
+        code: 'GEAR-02',
+        name: '鎏金發條與星光底座',
+        tag: '核心驅動結構',
+        desc: '支撐旋轉木馬的精密金屬底座與發條機關，透過香檳金與玫瑰銅齒輪的咬合，將潛能轉化為柔和的夢境律動。',
+        hint: '滾輪或使用右下角按鈕縮放，近距離觀察金屬環圈與星光核心。',
+        lore: '奧蕾莉亞最熟悉這組發條結構，每一圈轉動都代表著一段被重新串聯的夢境音符。'
+      },
+      {
+        id: 'star-realm',
+        code: 'REALM-03',
+        name: '星屑群島浮空星域',
+        tag: '夢境空間環境',
+        desc: '由暮光紫、香檳金與月光銀星塵交織而成的浮空群島空間，象徵著旋轉木馬旋律所照耀的奇幻世界。',
+        hint: '拖曳改變觀察視角，點擊星核可觸發星軌共鳴閃爍。',
+        lore: '露米娜與瑟拉菲娜在此共同守護群島的平衡，讓夢境與星光永不消散。'
+      }
+    ];
+
+    // ==========================================
+    // 2. 狀態與音樂盒音階音效
+    // ==========================================
+    let selectedRegionId = WORLD_REGIONS[0].id;
+    let activeCharIndex = 0;
+    let dialogueIndex = 0;
+    let showBackstory = false;
+    let charExpression = 'happy';
+    let isCharHovered = false;
+    let particleBurst = 1;
+    let activeModelIndex = 0;
+    let resonanceCount = 0;
+    let collectedGears = ['workshop'];
+    let soundEnabled = true;
+
+    function playMusicBoxNote(noteIndex = 0) {
+      if (!soundEnabled) return;
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const frequencies = [523.25, 659.25, 783.99, 1046.5, 987.77, 783.99];
+        const freq = frequencies[noteIndex % frequencies.length];
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+
+        gain.gain.setValueAtTime(0.001, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.16, ctx.currentTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.15);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 1.2);
+      } catch (e) {
+        // 忽略自動播放限制
+      }
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      const btn = document.getElementById('soundToggleBtn');
+      if (soundEnabled) {
+        btn.className = 'w-9 h-9 rounded-full border flex items-center justify-center text-sm transition bg-amber-400/20 border-amber-300/70 text-amber-200';
+        btn.textContent = '♪';
+        playMusicBoxNote(0);
+      } else {
+        btn.className = 'w-9 h-9 rounded-full border flex items-center justify-center text-sm transition bg-slate-800 border-slate-700 text-slate-500';
+        btn.textContent = '✕';
+      }
+    }
+
+    function updateProgressUI() {
+      const totalFragments = 8;
+      const percent = Math.min(100, Math.round((collectedGears.length / totalFragments) * 100));
+      document.getElementById('headerMelodyPercent').textContent = percent + '%';
+      document.getElementById('endingProgressLabel').textContent =
+        `✦ 夢境修復進度：${percent}%（已喚醒 ${collectedGears.length} / ${totalFragments} 項星塵線索）`;
+    }
+
+    function unlockFragment(key, label, noteIdx = 0) {
+      playMusicBoxNote(noteIdx);
+      if (!collectedGears.includes(key)) {
+        collectedGears.push(key);
+        updateProgressUI();
+        const toast = document.getElementById('questToast');
+        document.getElementById('questToastText').textContent = `獲得夢境線索：【${label}】`;
+        toast.classList.remove('hidden');
+        toast.classList.add('flex');
+        setTimeout(() => {
+          toast.classList.add('hidden');
+          toast.classList.remove('flex');
+        }, 2800);
+      }
+    }
+
+    function scrollToSection(id) {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function startJourney() {
+      unlockFragment('hero-start', '星穹旋轉木馬啟程', 0);
+      scrollToSection('world');
+    }
+
+    function replayJourney() {
+      unlockFragment('ending-replay', '完成夢境旋轉木馬巡禮', 3);
+      scrollToSection('hero');
+    }
+
+    // ==========================================
+    // 3. 世界地圖渲染與互動
+    // ==========================================
+    function renderWorldMap() {
+      const pinsContainer = document.getElementById('regionPinsContainer');
+      pinsContainer.innerHTML = WORLD_REGIONS.map((region, idx) => {
+        const isSelected = region.id === selectedRegionId;
+        return `
+          <button
+            onclick="selectRegion('${region.id}', ${idx})"
+            style="left: ${region.coords.x}%; top: ${region.coords.y}%;"
+            class="-translate-x-1/2 -translate-y-1/2 absolute flex flex-col items-center transition-transform duration-200 ${
+              isSelected ? 'scale-110 z-20' : 'hover:scale-105 z-10'
+            }"
+          >
+            <span
+              style="background-color: ${region.pinColor};"
+              class="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center text-[#14182E] font-bold shadow-md border-2 transition ${
+                isSelected ? 'border-amber-100 ring-4 ring-amber-300/35' : 'border-white/70'
+              }"
+            >
+              ${idx + 1}
+            </span>
+            <span
+              class="mt-1.5 px-3 py-1 rounded-full text-xs font-airy-zh font-bold whitespace-nowrap shadow transition ${
+                isSelected
+                  ? 'bg-amber-300 text-[#14182E] border border-amber-100'
+                  : 'bg-[#14182E]/95 text-amber-100 border border-[#E6BE6A]/45'
+              }"
+            >
+              ${region.name}
+            </span>
+          </button>
+        `;
+      }).join('');
+
+      const region = WORLD_REGIONS.find((r) => r.id === selectedRegionId) || WORLD_REGIONS[0];
+      document.getElementById('regionDetailPanel').innerHTML = `
+        <div class="space-y-4">
+          <div class="flex items-center justify-between gap-2">
+            <span style="background-color: ${region.pinColor};" class="px-3 py-1 rounded-full text-xs font-bold text-[#14182E] tracking-wider">
+              ${region.chapter}
+            </span>
+            <span class="text-xs font-semibold text-amber-200/90 bg-[#14182E]/80 px-3 py-1 rounded-full border border-white/15">
+              ${region.dangerLevel}
+            </span>
+          </div>
+
+          <div>
+            <h3 class="text-2xl font-bold text-[#FFFBEB]">${region.name}</h3>
+            <p class="font-ornate-en text-xs tracking-wider text-amber-300/90 mt-1">
+              ${region.subtitle}
+            </p>
+          </div>
+
+          <p class="text-slate-200 text-sm sm:text-base leading-relaxed font-light">
+            ${region.desc}
+          </p>
+
+          <div class="p-4 rounded-2xl bg-[#161A33]/90 border border-[#E6BE6A]/35 space-y-1">
+            <div class="text-xs font-bold text-amber-300">【旋律與世界異變】</div>
+            <p class="text-xs sm:text-sm text-slate-200/90 leading-relaxed font-light">
+              ${region.anomaly}
+            </p>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-white/15 flex items-center justify-between text-xs gap-2">
+          <span class="text-slate-300 font-semibold">關鍵線索：</span>
+          <span class="font-bold text-amber-200 bg-amber-400/15 px-3 py-1 rounded-full border border-amber-300/45">
+            ✦ ${region.keyItem}
+          </span>
+        </div>
+      `;
+    }
+
+    function selectRegion(id, idx) {
+      selectedRegionId = id;
+      const region = WORLD_REGIONS.find((r) => r.id === id);
+      renderWorldMap();
+      if (region) unlockFragment(region.id, `${region.name} 星域座標`, idx);
+    }
+
+    // ==========================================
+    // 4. 三隻獨角獸角色互動與專屬十字星/小愛心粒子
+    // ==========================================
+    function buildUnicornSvg(char) {
+      const eyesSvg =
+        charExpression === 'happy'
+          ? `
+            <path d="M104 117 Q110 111 116 117" fill="none" stroke="#231F20" stroke-width="3.2" stroke-linecap="round"></path>
+            <path d="M144 117 Q150 111 156 117" fill="none" stroke="#231F20" stroke-width="3.2" stroke-linecap="round"></path>
+          `
+          : `
+            <circle cx="110" cy="116" r="5.5" fill="#231F20"></circle>
+            <circle cx="108.2" cy="114" r="2" fill="#FFFFFF"></circle>
+            <circle cx="150" cy="116" r="5.5" fill="#231F20"></circle>
+            <circle cx="148.2" cy="114" r="2" fill="#FFFFFF"></circle>
+          `;
+
+      return `
+        <svg viewBox="0 0 260 280" class="w-full h-full relative z-10">
+          <defs>
+            <radialGradient id="uniAura-${char.id}" cx="50%" cy="52%" r="52%">
+              <stop offset="0%" stop-color="${char.auraStart}" stop-opacity="0.42"></stop>
+              <stop offset="100%" stop-color="${char.auraStart}" stop-opacity="0"></stop>
+            </radialGradient>
+            <linearGradient id="uniBody-${char.id}" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="${char.fur}"></stop>
+              <stop offset="100%" stop-color="${char.furShadow}"></stop>
+            </linearGradient>
+          </defs>
+
+          <ellipse cx="130" cy="246" rx="76" ry="12" fill="#0F1326" opacity="0.45"></ellipse>
+          <circle cx="130" cy="145" r="100" fill="url(#uniAura-${char.id})"></circle>
+
+          <!-- 左右對稱小翅膀 -->
+          <g opacity="0.95">
+            <path d="M84 146 C54 128, 44 136, 56 150 C44 152, 48 164, 66 164 C56 168, 62 178, 86 170 Z" fill="${char.wing}" stroke="#FFFBEB" stroke-width="1.2"></path>
+            <path d="M176 146 C206 128, 216 136, 204 150 C216 152, 212 164, 194 164 C204 168, 198 178, 174 170 Z" fill="${char.wing}" stroke="#FFFBEB" stroke-width="1.2"></path>
+          </g>
+
+          <!-- 左右對稱小耳朵 -->
+          <g>
+            <path d="M92 84 C76 62, 68 72, 78 102 Z" fill="url(#uniBody-${char.id})" stroke="#FFFBEB" stroke-width="1.5"></path>
+            <path d="M88 86 C78 72, 74 78, 81 98 Z" fill="${char.patch}"></path>
+            <path d="M168 84 C184 62, 192 72, 182 102 Z" fill="url(#uniBody-${char.id})" stroke="#FFFBEB" stroke-width="1.5"></path>
+            <path d="M172 86 C182 72, 186 78, 179 98 Z" fill="${char.patch}"></path>
+          </g>
+
+          <!-- 坐姿圓潤身體與肚皮 -->
+          <path d="M82 154 C74 188, 72 224, 92 238 L168 238 C188 224, 186 188, 178 154 C162 142, 98 142, 82 154 Z" fill="url(#uniBody-${char.id})" stroke="#FFFBEB" stroke-width="1.5"></path>
+          <ellipse cx="130" cy="192" rx="30" ry="38" fill="${char.patch}" opacity="0.88"></ellipse>
+          <line x1="130" y1="176" x2="130" y2="206" stroke="${char.furShadow}" stroke-width="2" stroke-linecap="round"></line>
+
+          <!-- 張開迎接的左右小手 -->
+          <g>
+            <path d="M82 154 C54 152, 42 162, 46 176 C50 188, 68 186, 84 176 Z" fill="url(#uniBody-${char.id})" stroke="#FFFBEB" stroke-width="1.5"></path>
+            <circle cx="58" cy="171" r="11" fill="${char.patch}"></circle>
+            <circle cx="55" cy="168" r="2.2" fill="${char.starMotif}"></circle>
+            <circle cx="62" cy="174" r="1.8" fill="${char.horn}"></circle>
+
+            <path d="M178 154 C206 152, 218 162, 214 176 C210 188, 192 186, 176 176 Z" fill="url(#uniBody-${char.id})" stroke="#FFFBEB" stroke-width="1.5"></path>
+            <circle cx="202" cy="171" r="11" fill="${char.patch}"></circle>
+            <circle cx="205" cy="168" r="2.2" fill="${char.starMotif}"></circle>
+            <circle cx="198" cy="174" r="1.8" fill="${char.horn}"></circle>
+          </g>
+
+          <!-- 左右坐姿小腳 -->
+          <g>
+            <ellipse cx="92" cy="226" rx="24" ry="18" fill="url(#uniBody-${char.id})" stroke="#FFFBEB" stroke-width="1.5"></ellipse>
+            <ellipse cx="92" cy="232" rx="14" ry="10" fill="${char.patch}"></ellipse>
+            <circle cx="88" cy="232" r="2" fill="${char.starMotif}"></circle>
+            <circle cx="96" cy="234" r="1.6" fill="${char.horn}"></circle>
+
+            <ellipse cx="168" cy="226" rx="24" ry="18" fill="url(#uniBody-${char.id})" stroke="#FFFBEB" stroke-width="1.5"></ellipse>
+            <ellipse cx="168" cy="232" rx="14" ry="10" fill="${char.patch}"></ellipse>
+            <circle cx="164" cy="232" r="2" fill="${char.starMotif}"></circle>
+            <circle cx="172" cy="234" r="1.6" fill="${char.horn}"></circle>
+          </g>
+
+          <!-- 對稱圓潤頭部 -->
+          <ellipse cx="130" cy="116" rx="44" ry="38" fill="url(#uniBody-${char.id})" stroke="#FFFBEB" stroke-width="1.5"></ellipse>
+
+          <!-- 頭頂正中央尖銳螺旋獨角 -->
+          <g class="${isCharHovered ? 'animate-pulse' : ''}">
+            <polygon points="121,81 130,22 139,81" fill="${char.horn}" stroke="#FFFBEB" stroke-width="1.5" stroke-linejoin="round"></polygon>
+            <line x1="123" y1="66" x2="137" y2="63" stroke="#FFFBEB" stroke-width="1.3" stroke-linecap="round" opacity="0.85"></line>
+            <line x1="125" y1="50" x2="135" y2="47" stroke="#FFFBEB" stroke-width="1.3" stroke-linecap="round" opacity="0.85"></line>
+            <line x1="127" y1="35" x2="133" y2="33" stroke="#FFFBEB" stroke-width="1.2" stroke-linecap="round" opacity="0.8"></line>
+          </g>
+
+          <!-- 口鼻吻部 -->
+          <ellipse cx="130" cy="134" rx="23" ry="16" fill="${char.patch}" stroke="${char.furShadow}" stroke-width="1.2"></ellipse>
+          <circle cx="122" cy="132" r="2.4" fill="#3B2F2F"></circle>
+          <circle cx="138" cy="132" r="2.4" fill="#3B2F2F"></circle>
+          <path d="M123 141 Q130 146 137 141" fill="none" stroke="#4B3B47" stroke-width="2" stroke-linecap="round"></path>
+
+          <!-- 左右對稱眼睛與腮紅 -->
+          <ellipse cx="105" cy="126" rx="7" ry="4" fill="#F472B6" opacity="0.35"></ellipse>
+          <ellipse cx="155" cy="126" rx="7" ry="4" fill="#F472B6" opacity="0.35"></ellipse>
+          ${eyesSvg}
+        </svg>
+      `;
+    }
+
+    function buildFloatingParticlesHtml(char) {
+      const animClass =
+        char.trajectoryType === 'spiral'
+          ? 'unicorn-particle-spiral'
+          : char.trajectoryType === 'arc'
+            ? 'unicorn-particle-arc'
+            : 'unicorn-particle-wave';
+
+      const items = [
+        { kind: 'star', left: '14%', bottom: '20%', size: 18, delay: '0s' },
+        { kind: 'heart', left: '78%', bottom: '24%', size: 15, delay: '0.25s' },
+        { kind: 'star', left: '26%', bottom: '35%', size: 14, delay: '0.5s' },
+        { kind: 'heart', left: '70%', bottom: '42%', size: 13, delay: '0.75s' },
+        { kind: 'star', left: '52%', bottom: '18%', size: 20, delay: '1.0s' },
+        { kind: 'heart', left: '36%', bottom: '28%', size: 14, delay: '1.25s' }
+      ];
+
+      return items
+        .map((p) => {
+          const color = p.kind === 'star' ? char.starColor : char.heartColor;
+          const shapeSvg =
+            p.kind === 'star'
+              ? `<svg width="${p.size}" height="${p.size}" viewBox="0 0 24 24" class="drop-shadow"><path d="M12 1 L14.6 9.4 L23 12 L14.6 14.6 L12 23 L9.4 14.6 L1 12 L9.4 9.4 Z" fill="${color}"></path></svg>`
+              : `<svg width="${p.size}" height="${p.size}" viewBox="0 0 24 24" class="drop-shadow"><path d="M12 21.2 C12 21.2 3.2 15.2 3.2 8.8 C3.2 5.9 5.5 3.8 8.2 3.8 C10 3.8 11.4 4.7 12 6.1 C12.6 4.7 14 3.8 15.8 3.8 C18.5 3.8 20.8 5.9 20.8 8.8 C20.8 15.2 12 21.2 12 21.2 Z" fill="${color}" fill-opacity="0.9"></path></svg>`;
+
+          return `
+            <div style="left: ${p.left}; bottom: ${p.bottom}; animation-delay: ${p.delay};" class="absolute ${animClass}">
+              ${shapeSvg}
+            </div>
+          `;
+        })
+        .join('');
+    }
+
+    function renderCharactersSection() {
+      const tabsEl = document.getElementById('characterTabsContainer');
+      tabsEl.innerHTML = CHARACTERS.map((char, idx) => {
+        const active = idx === activeCharIndex;
+        return `
+          <button
+            onclick="selectCharacter(${idx})"
+            class="px-5 py-3 rounded-full font-bold text-sm flex items-center gap-2.5 transition-all border-2 ${
+              active
+                ? 'bg-gradient-to-r from-[#2B3261] to-[#3B2654] text-amber-200 border-[#E6BE6A] shadow-lg -translate-y-0.5'
+                : 'bg-[#151930] text-slate-300 border-white/15 hover:border-[#E6BE6A]/60'
+            }"
+          >
+            <span class="text-xs opacity-75">${char.code}</span>
+            <span>${char.name}</span>
+          </button>
+        `;
+      }).join('');
+
+      const char = CHARACTERS[activeCharIndex];
+      const cardEl = document.getElementById('characterShowcaseCard');
+      cardEl.className = `rounded-3xl ${char.cardBg} p-6 sm:p-10 border-2 ${char.borderAccent} shadow-2xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center animate-panel-reveal`;
+
+      cardEl.innerHTML = `
+        <div class="lg:col-span-5 flex flex-col items-center">
+          <div
+            onclick="triggerCharacterDialogue()"
+            onmouseenter="setCharacterHover(true)"
+            onmouseleave="setCharacterHover(false)"
+            role="button"
+            tabindex="0"
+            class="relative w-64 h-64 sm:w-72 sm:h-72 rounded-3xl bg-gradient-to-b from-[#13172C] to-[#222647] border-2 border-[#E6BE6A]/55 shadow-inner p-4 cursor-pointer transition-transform duration-300 hover:scale-[1.03] active:scale-95"
+          >
+            <div class="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl z-20">
+              ${buildFloatingParticlesHtml(char)}
+            </div>
+            ${buildUnicornSvg(char)}
+            <span class="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 bg-[#121528]/90 text-amber-100 font-airy-zh text-xs px-3.5 py-1 rounded-full border border-[#E6BE6A]/50 whitespace-nowrap">
+              ✦ 點擊或移入喚醒星塵對話
+            </span>
+          </div>
+          <span class="mt-2.5 text-xs font-airy-zh text-slate-300/90">
+            粒子軌跡：${char.trajectoryLabel}
+          </span>
+        </div>
+
+        <div class="lg:col-span-7 space-y-5 font-airy-zh">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/15 pb-3">
+            <div>
+              <span class="text-xs font-bold tracking-widest text-amber-300/80 block">
+                ${char.code} · ${char.title}
+              </span>
+              <h3 class="text-2xl sm:text-3xl font-bold text-[#FFFBEB]">${char.name}</h3>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <span class="px-3 py-1 rounded-full text-xs font-bold border ${char.tagStyle}">
+                ${char.classType}
+              </span>
+              <span class="px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-amber-100 border border-white/15">
+                象徵：${char.weapon}
+              </span>
+            </div>
+          </div>
+
+          <div class="bg-[#14182E]/85 rounded-2xl p-3.5 border border-white/15">
+            <span class="text-xs font-bold text-amber-300 block">${char.skillName}</span>
+            <span class="text-xs sm:text-sm text-slate-200 font-light">${char.skillDesc}</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            ${char.stats
+              .map(
+                (stat) => `
+                  <div class="bg-[#14182E]/85 rounded-2xl p-3 border border-white/15">
+                    <div class="flex justify-between text-xs font-bold text-slate-200 mb-1.5">
+                      <span>${stat.label}</span>
+                      <span>${stat.val} / ${stat.max}</span>
+                    </div>
+                    <div class="h-2 rounded-full bg-white/10 overflow-hidden">
+                      <div style="width: ${stat.val}%; background-color: ${char.accentColor};" class="h-full transition-all duration-500 rounded-full"></div>
+                    </div>
+                  </div>
+                `
+              )
+              .join('')}
+          </div>
+
+          <div class="bg-[#12162B]/95 text-[#F8FAFC] rounded-2xl p-4 sm:p-5 border-2 border-[#E6BE6A]/60 shadow-md space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-bold text-amber-300 tracking-wider">
+                ✦ ${char.name} (${dialogueIndex + 1}/${char.dialogues.length})
+              </span>
+              <button onclick="triggerCharacterDialogue()" class="text-amber-200 hover:text-white font-semibold underline">
+                切換下一句對話 ▼
+              </button>
+            </div>
+            <p class="text-sm sm:text-base text-slate-100 leading-relaxed font-light">
+              ${char.dialogues[dialogueIndex]}
+            </p>
+          </div>
+
+          <div>
+            <button onclick="toggleBackstory()" class="px-4 py-2 rounded-full bg-white/10 hover:bg-white/15 text-amber-100 text-xs font-bold border border-[#E6BE6A]/40 transition">
+              ${showBackstory ? '▲ 收合獨角獸背景故事' : '▼ 展開獨角獸背景故事'}
+            </button>
+            ${
+              showBackstory
+                ? `<div class="mt-3 p-4 rounded-2xl bg-[#14182E]/90 border border-white/15 text-sm text-slate-200 leading-relaxed font-light animate-panel-reveal">${char.backstory}</div>`
+                : ''
+            }
+          </div>
+        </div>
+      `;
+    }
+
+    function selectCharacter(idx) {
+      activeCharIndex = idx;
+      dialogueIndex = 0;
+      charExpression = 'happy';
+      particleBurst++;
+      renderCharactersSection();
+      unlockFragment(`char-${CHARACTERS[idx].id}`, `${CHARACTERS[idx].name} 獨角獸檔案`, idx + 1);
+    }
+
+    function triggerCharacterDialogue() {
+      const char = CHARACTERS[activeCharIndex];
+      dialogueIndex = (dialogueIndex + 1) % char.dialogues.length;
+      charExpression = charExpression === 'happy' ? 'curious' : 'happy';
+      particleBurst++;
+      renderCharactersSection();
+      unlockFragment(`talk-${char.id}`, `${char.name} 的星塵對話`, dialogueIndex + 2);
+    }
+
+    function setCharacterHover(hovered) {
+      isCharHovered = hovered;
+      if (hovered) particleBurst++;
+      renderCharactersSection();
+    }
+
+    function toggleBackstory() {
+      showBackstory = !showBackstory;
+      renderCharactersSection();
+    }
+
+    // ==========================================
+    // 5. 六幕故事渲染
+    // ==========================================
+    function renderStoryActs() {
+      const container = document.getElementById('storyActsContainer');
+      container.innerHTML = STORY_ACTS.map((item, idx) => {
+        const isEven = idx % 2 === 0;
+        return `
+          <div class="relative flex flex-col sm:flex-row items-start sm:items-center gap-6 ${isEven ? 'sm:flex-row' : 'sm:flex-row-reverse'}">
+            <div class="ml-1 sm:ml-0 sm:absolute sm:left-1/2 sm:-translate-x-1/2 w-9 h-9 rounded-full bg-[#24294D] text-amber-200 border-2 border-[#E6BE6A] font-airy-zh font-bold text-xs flex items-center justify-center shadow z-10">
+              ${idx + 1}
+            </div>
+
+            <div class="ml-12 sm:ml-0 sm:w-[45%] bg-[#222748]/90 rounded-3xl p-6 border border-[#E6BE6A]/45 shadow-md hover:border-[#E6BE6A] transition-all duration-300 space-y-3 font-airy-zh">
+              <div class="flex items-center justify-between gap-2 flex-wrap">
+                <span class="px-3 py-0.5 rounded-full text-xs font-bold ${item.badgeColor}">
+                  ${item.act}
+                </span>
+                <span class="text-xs font-medium text-slate-300">
+                  ✦ ${item.location}
+                </span>
+              </div>
+              <h3 class="text-lg sm:text-xl font-bold text-[#FFFBEB]">${item.title}</h3>
+              <p class="text-slate-200 text-sm leading-relaxed font-light">${item.text}</p>
+              <div class="pt-2.5 border-t border-white/15 text-xs font-bold text-amber-200">
+                ▸ ${item.questNote}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ==========================================
+    // 6. Three.js 3D 旋轉木馬音樂盒觀測台
+    // ==========================================
+    let threeScene, threeCamera, threeRenderer, mainGroup, animatedParts = [], starField;
+    let isDragging = false;
+    let prevMouse = { x: 0, y: 0 };
+    let clickStart = { x: 0, y: 0 };
+    let targetRotation = { x: 0.24, y: 0.35 };
+    let targetZoom = 6.8;
+    let pulseBoost = 0;
+
+    function buildThreeModel(modelId) {
+      while (mainGroup.children.length > 0) {
+        mainGroup.remove(mainGroup.children[0]);
+      }
+      animatedParts = [];
+
+      const carouselTurntable = new THREE.Group();
+      mainGroup.add(carouselTurntable);
+
+      const champagneGoldMat = new THREE.MeshStandardMaterial({
+        color: 0xe6be6a,
+        roughness: 0.24,
+        metalness: 0.85
+      });
+      const roseCopperMat = new THREE.MeshStandardMaterial({
+        color: 0xd48c9e,
+        roughness: 0.32,
+        metalness: 0.78
+      });
+      const pearlHorseMat = new THREE.MeshStandardMaterial({
+        color: 0xfdf4ff,
+        roughness: 0.28,
+        metalness: 0.2
+      });
+      const starCrystalMat = new THREE.MeshStandardMaterial({
+        color: 0xfde047,
+        emissive: 0xd97706,
+        emissiveIntensity: 0.45,
+        roughness: 0.15,
+        metalness: 0.4
+      });
+
+      if (modelId === 'carousel') {
+        const baseTier = new THREE.Mesh(new THREE.CylinderGeometry(1.85, 2.05, 0.48, 36), roseCopperMat);
+        baseTier.position.y = -1.05;
+        mainGroup.add(baseTier);
+
+        const goldTrim = new THREE.Mesh(new THREE.TorusGeometry(1.9, 0.07, 16, 48), champagneGoldMat);
+        goldTrim.rotation.x = Math.PI / 2;
+        goldTrim.position.y = -0.8;
+        mainGroup.add(goldTrim);
+
+        const deckDisc = new THREE.Mesh(new THREE.CylinderGeometry(1.65, 1.65, 0.18, 36), champagneGoldMat);
+        deckDisc.position.y = -0.72;
+        carouselTurntable.add(deckDisc);
+
+        const centerPillar = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.32, 2.1, 20), champagneGoldMat);
+        centerPillar.position.y = 0.35;
+        carouselTurntable.add(centerPillar);
+
+        const horseCount = 5;
+        for (let i = 0; i < horseCount; i++) {
+          const angle = (i * Math.PI * 2) / horseCount;
+          const radius = 1.25;
+          const hx = Math.cos(angle) * radius;
+          const hz = Math.sin(angle) * radius;
+
+          const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.95, 10), champagneGoldMat);
+          pole.position.set(hx, 0.3, hz);
+          carouselTurntable.add(pole);
+
+          const horseGroup = new THREE.Group();
+          horseGroup.position.set(hx, -0.05, hz);
+          horseGroup.rotation.y = -angle + Math.PI / 2;
+
+          const torso = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.24, 0.52), pearlHorseMat);
+          horseGroup.add(torso);
+
+          const neck = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.32, 0.18), pearlHorseMat);
+          neck.position.set(0, 0.2, 0.2);
+          neck.rotation.x = 0.4;
+          horseGroup.add(neck);
+
+          const head = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.16, 0.28), pearlHorseMat);
+          head.position.set(0, 0.34, 0.32);
+          horseGroup.add(head);
+
+          const horn = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.22, 10), starCrystalMat);
+          horn.position.set(0, 0.48, 0.36);
+          horn.rotation.x = 0.35;
+          horseGroup.add(horn);
+
+          carouselTurntable.add(horseGroup);
+          animatedParts.push({
+            mesh: horseGroup,
+            bobAmp: 0.16,
+            baseY: -0.05,
+            phase: i * 1.25
+          });
+        }
+
+        const canopyCone = new THREE.Mesh(new THREE.ConeGeometry(1.78, 0.85, 32), roseCopperMat);
+        canopyCone.position.y = 1.72;
+        carouselTurntable.add(canopyCone);
+
+        const canopyRim = new THREE.Mesh(new THREE.TorusGeometry(1.75, 0.06, 16, 48), champagneGoldMat);
+        canopyRim.rotation.x = Math.PI / 2;
+        canopyRim.position.y = 1.32;
+        carouselTurntable.add(canopyRim);
+
+        const crownStar = new THREE.Mesh(new THREE.OctahedronGeometry(0.32, 0), starCrystalMat);
+        crownStar.position.y = 2.35;
+        carouselTurntable.add(crownStar);
+        animatedParts.push({ mesh: crownStar, rotY: 0.025, floatAmp: 0.08, baseY: 2.35 });
+
+        animatedParts.push({ mesh: carouselTurntable, rotY: 0.009 });
+      } else if (modelId === 'windup-base') {
+        const outerRing = new THREE.Mesh(new THREE.TorusGeometry(1.65, 0.12, 18, 64), champagneGoldMat);
+        outerRing.rotation.x = Math.PI / 2.2;
+        mainGroup.add(outerRing);
+        animatedParts.push({ mesh: outerRing, rotZ: 0.012 });
+
+        const innerRing = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.09, 16, 48), roseCopperMat);
+        innerRing.rotation.x = Math.PI / 2.2;
+        mainGroup.add(innerRing);
+        animatedParts.push({ mesh: innerRing, rotZ: -0.018 });
+
+        const windupKey = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.08, 14, 32), starCrystalMat);
+        windupKey.position.y = 0.25;
+        mainGroup.add(windupKey);
+        animatedParts.push({ mesh: windupKey, rotY: 0.022, floatAmp: 0.12, baseY: 0.25 });
+      } else {
+        const coreOrb = new THREE.Mesh(new THREE.OctahedronGeometry(0.75, 1), starCrystalMat);
+        mainGroup.add(coreOrb);
+        animatedParts.push({ mesh: coreOrb, rotY: 0.015, floatAmp: 0.1, baseY: 0 });
+
+        const miniIslands = [
+          { pos: [1.6, 0.6, 0.5], col: champagneGoldMat, scale: 0.45 },
+          { pos: [-1.5, -0.4, 0.9], col: roseCopperMat, scale: 0.38 },
+          { pos: [0.3, -1.2, -1.4], col: pearlHorseMat, scale: 0.34 }
+        ];
+
+        miniIslands.forEach((item, idx) => {
+          const isle = new THREE.Mesh(new THREE.DodecahedronGeometry(item.scale, 0), item.col);
+          isle.position.set(item.pos[0], item.pos[1], item.pos[2]);
+          mainGroup.add(isle);
+          animatedParts.push({
+            mesh: isle,
+            floatAmp: 0.14,
+            baseY: item.pos[1],
+            phase: idx * 1.7,
+            rotY: 0.012
+          });
+        });
+      }
+    }
+
+    function initThreeScene() {
+      const container = document.getElementById('threeCanvasMount');
+      if (!container || typeof THREE === 'undefined') return;
+
+      const width = container.clientWidth || 600;
+      const height = container.clientHeight || 420;
+
+      threeScene = new THREE.Scene();
+      threeCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+      threeCamera.position.set(0, 1.5, targetZoom);
+
+      threeRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      threeRenderer.setSize(width, height);
+      threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.innerHTML = '';
+      container.appendChild(threeRenderer.domElement);
+
+      threeScene.add(new THREE.AmbientLight(0xf3e8ff, 0.95));
+
+      const goldKeyLight = new THREE.PointLight(0xfbbf24, 1.9, 26);
+      goldKeyLight.position.set(4.5, 5.5, 4.5);
+      threeScene.add(goldKeyLight);
+
+      const roseFillLight = new THREE.PointLight(0xf472b6, 1.3, 24);
+      roseFillLight.position.set(-4.5, 1.5, 3.5);
+      threeScene.add(roseFillLight);
+
+      const moonBackLight = new THREE.PointLight(0x93c5fd, 1.1, 24);
+      moonBackLight.position.set(0, 3, -5);
+      threeScene.add(moonBackLight);
+
+      mainGroup = new THREE.Group();
+      threeScene.add(mainGroup);
+
+      buildThreeModel(SCENE_MODELS[activeModelIndex].id);
+
+      const starGeo = new THREE.BufferGeometry();
+      const starCount = 95;
+      const positions = new Float32Array(starCount * 3);
+      for (let i = 0; i < starCount * 3; i++) {
+        positions[i] = (Math.random() - 0.5) * 9.5;
+      }
+      starGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const starMat = new THREE.PointsMaterial({ color: 0xfde68a, size: 0.075 });
+      starField = new THREE.Points(starGeo, starMat);
+      threeScene.add(starField);
+
+      const domEl = threeRenderer.domElement;
+
+      const onPointerDown = (e) => {
+        isDragging = true;
+        const cx = e.touches ? e.touches[0].clientX : e.clientX;
+        const cy = e.touches ? e.touches[0].clientY : e.clientY;
+        prevMouse = { x: cx, y: cy };
+        clickStart = { x: cx, y: cy };
+      };
+
+      const onPointerMove = (e) => {
+        if (!isDragging) return;
+        const cx = e.touches ? e.touches[0].clientX : e.clientX;
+        const cy = e.touches ? e.touches[0].clientY : e.clientY;
+        const dx = cx - prevMouse.x;
+        const dy = cy - prevMouse.y;
+        targetRotation.y += dx * 0.01;
+        targetRotation.x = Math.max(-0.8, Math.min(0.9, targetRotation.x + dy * 0.008));
+        prevMouse = { x: cx, y: cy };
+      };
+
+      const onPointerUp = (e) => {
+        isDragging = false;
+        const cx = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+        const cy = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+        if (Math.hypot(cx - clickStart.x, cy - clickStart.y) < 6) {
+          triggerResonance();
+        }
+      };
+
+      const onWheel = (e) => {
+        e.preventDefault();
+        targetZoom = Math.max(4.0, Math.min(9.5, targetZoom + e.deltaY * 0.004));
+      };
+
+      domEl.addEventListener('mousedown', onPointerDown);
+      window.addEventListener('mousemove', onPointerMove);
+      window.addEventListener('mouseup', onPointerUp);
+      domEl.addEventListener('touchstart', onPointerDown, { passive: true });
+      domEl.addEventListener('touchmove', onPointerMove, { passive: true });
+      domEl.addEventListener('touchend', onPointerUp);
+      domEl.addEventListener('wheel', onWheel, { passive: false });
+
+      window.addEventListener('resize', () => {
+        if (!container || !threeRenderer || !threeCamera) return;
+        const w = container.clientWidth || 600;
+        const h = container.clientHeight || 420;
+        threeCamera.aspect = w / h;
+        threeCamera.updateProjectionMatrix();
+        threeRenderer.setSize(w, h);
+      });
+
+      let clock = 0;
+      function animateThree() {
+        requestAnimationFrame(animateThree);
+        clock += 0.03;
+
+        if (pulseBoost > 0) {
+          pulseBoost = Math.max(0, pulseBoost - 0.014);
+        }
+        const speedMult = 1 + pulseBoost * 4.5;
+
+        if (!isDragging) {
+          targetRotation.y += 0.0035 * speedMult;
+        }
+
+        mainGroup.rotation.y += (targetRotation.y - mainGroup.rotation.y) * 0.1;
+        mainGroup.rotation.x += (targetRotation.x - mainGroup.rotation.x) * 0.1;
+        threeCamera.position.z += (targetZoom - threeCamera.position.z) * 0.1;
+
+        animatedParts.forEach((part) => {
+          if (part.rotY) part.mesh.rotation.y += part.rotY * speedMult;
+          if (part.rotX) part.mesh.rotation.x += part.rotX * speedMult;
+          if (part.rotZ) part.mesh.rotation.z += part.rotZ * speedMult;
+          if (part.floatAmp) {
+            part.mesh.position.y = part.baseY + Math.sin(clock + (part.phase || 0)) * part.floatAmp;
+          }
+          if (part.bobAmp) {
+            part.mesh.position.y = part.baseY + Math.sin(clock * 1.4 + (part.phase || 0)) * part.bobAmp;
+          }
+        });
+
+        starField.rotation.y -= 0.0012;
+        threeRenderer.render(threeScene, threeCamera);
+      }
+      animateThree();
+    }
+
+    function adjustThreeZoom(delta) {
+      targetZoom = Math.max(4.0, Math.min(9.5, targetZoom + delta));
+    }
+
+    function renderExploreSection() {
+      const tabsEl = document.getElementById('modelSelectorTabs');
+      tabsEl.innerHTML = SCENE_MODELS.map((model, idx) => {
+        const selected = idx === activeModelIndex;
+        return `
+          <button
+            onclick="selectSceneModel(${idx})"
+            class="px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold border-2 transition ${
+              selected
+                ? 'bg-gradient-to-r from-[#2B3261] to-[#3B2654] text-amber-200 border-[#E6BE6A] shadow'
+                : 'bg-[#151930] text-slate-300 border-white/15 hover:border-[#E6BE6A]/60'
+            }"
+          >
+            <span class="opacity-70 mr-1.5">${model.code}</span>
+            <span>${model.name}</span>
+          </button>
+        `;
+      }).join('');
+
+      const model = SCENE_MODELS[activeModelIndex];
+      document.getElementById('modelDetailPanel').innerHTML = `
+        <div class="flex items-center justify-between">
+          <span class="px-3 py-1 rounded-full bg-amber-400/15 text-amber-200 border border-amber-300/45 text-xs font-bold">
+            ${model.tag}
+          </span>
+          <span class="text-xs font-bold text-slate-400">${model.code}</span>
+        </div>
+
+        <h3 class="text-2xl font-bold text-[#FFFBEB]">${model.name}</h3>
+
+        <p class="text-slate-200 text-sm sm:text-base leading-relaxed font-light">
+          ${model.desc}
+        </p>
+
+        <div class="p-4 rounded-2xl bg-[#151930]/90 border border-white/15 text-xs sm:text-sm text-slate-200 leading-relaxed font-light">
+          <strong class="text-amber-300">【旋轉木馬工坊筆記】</strong>
+          ${model.lore}
+        </div>
+
+        <div class="pt-2">
+          <button onclick="triggerResonance()" class="w-full py-3.5 px-6 rounded-full bg-gradient-to-r from-[#E6BE6A] via-[#F5C878] to-[#D48C9E] hover:brightness-105 text-[#14182E] font-bold tracking-wide shadow-lg border border-amber-200 transition active:scale-95 flex items-center justify-center gap-2">
+            <span>♪ 啟動旋轉木馬旋律共鳴</span>
+          </button>
+          <p class="text-center text-xs text-slate-300/90 mt-2">${model.hint}</p>
+        </div>
+      `;
+    }
+
+    function selectSceneModel(idx) {
+      activeModelIndex = idx;
+      renderExploreSection();
+      if (mainGroup) buildThreeModel(SCENE_MODELS[idx].id);
+      unlockFragment(`view-${SCENE_MODELS[idx].id}`, `${SCENE_MODELS[idx].name} 3D 檔案`, idx + 1);
+    }
+
+    function triggerResonance() {
+      pulseBoost = 1.1;
+      const model = SCENE_MODELS[activeModelIndex];
+      unlockFragment(`model-${model.id}`, `${model.name} 旋轉共鳴`, resonanceCount++);
+      const banner = document.getElementById('resonanceBanner');
+      banner.textContent = `♪ 「${model.name}」的金屬齒輪與星冠共鳴，旋轉木馬流轉出溫暖夢境光輝！`;
+      banner.classList.remove('hidden');
+      setTimeout(() => {
+        banner.classList.add('hidden');
+      }, 3200);
+    }
+
+    // ==========================================
+    // 7. 初始化與捲動進度監聽
+    // ==========================================
+    window.addEventListener('scroll', () => {
+      const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
+      const current = window.scrollY;
+      const pct = totalScroll > 0 ? Math.min(100, Math.max(0, (current / totalScroll) * 100)) : 0;
+      document.getElementById('scrollProgressBar').style.width = pct + '%';
+    }, { passive: true });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderWorldMap();
+      renderCharactersSection();
+      renderStoryActs();
+      renderExploreSection();
+      updateProgressUI();
+      initThreeScene();
+    });
+  </script>
+</body>
+</html>
